@@ -7,7 +7,7 @@ WORKDIR /gifer
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY main.go from_url.go from_file.go ./
+COPY *.go ./
 RUN go build -ldflags="-s -w" -o gifer
 
 FROM jrottenberg/ffmpeg:3.4-alpine
