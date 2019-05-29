@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloudfoundry/bytefmt"
 	"github.com/gorilla/mux"
 )
 
@@ -27,8 +29,8 @@ func main() {
 
 	log.Printf("Start gifer server on %s", port)
 	r.SkipClean(true)
-	r.HandleFunc(`/unsafe/{dimension:\d+x\d+}/{filters:filters:\w{3,}\(.*\)}/{source:.*}`, resizeFromURLHandler()).Methods("GET")
-	r.HandleFunc(`/unsafe/{dimension:\d+x\d+}/{filters:filters:\w{3,}\(.*\)}`, resizeFromFileHandler()).Methods("POST")
+	r.HandleFunc(`/unsafe/{dimension:\d+x\d+}/{filters:filters:\w{3,}\(.*\)}/{source:.*}`, resizeFromURLHandler).Methods("GET")
+	r.HandleFunc(`/unsafe/{dimension:\d+x\d+}/{filters:filters:\w{3,}\(.*\)}`, resizeFromFileHandler).Methods("POST")
 	r.HandleFunc("/version", versionHandler())
 	srv := &http.Server{
 		Handler:      r,
@@ -106,4 +108,39 @@ func versionHandler() http.HandlerFunc {
 
 		w.WriteHeader(http.StatusOK)
 	})
+}
+
+func processBuffer(w http.ResponseWriter, req *http.Request, inBuffer *bytes.Buffer) {
+	dimension, format, err := parseParams(req)
+	if err != nil {
+		log.Printf("[ERROR] parse params error %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("[DEBUG] Process file -> Dimension: %s", dimension)
+	sourceSize := inBuffer.Len()
+
+	resBuffer, err := convert(inBuffer, format, dimension)
+	if err != nil {
+		log.Printf("[ERROR] Convert error %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("[DEBUG] File resized length before: %s", bytefmt.ByteSize(uint64(sourceSize)))
+
+	// output, _ := ioutil.ReadAll(outfile)
+	imageLen := resBuffer.Len()
+
+	log.Printf("[DEBUG] File resized length after: %s", bytefmt.ByteSize(uint64(imageLen)))
+
+	w.Header().Set("X-Filename", "video."+format)
+	w.Header().Set("Content-Type", "video/"+format)
+	w.Header().Set("Content-Length", strconv.Itoa(imageLen))
+	w.WriteHeader(http.StatusOK)
+	_, err = io.Copy(w, resBuffer)
+	if err != nil {
+		log.Printf("[ERROR] Output write error %v", err)
+	}
 }
