@@ -36,22 +36,29 @@ func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer
 		"-vf", dimensions,
 		// "-pix_fmt", "yuv420p",
 		// "-movflags", "frag_keyframe",
-		// "-movflags", "faststart",
+		"-movflags", "faststart",
 		// "-qmin", "10", // the minimum quantizer (default 4, range 0–63), lower - better quality --- VP9 only
 		// "-qmax", "42", // the maximum quantizer (default 63, range qmin–63) higher - lower quality --- VP9 only
-		// "-crf", "23", // enable constant bitrate(0-51) lower - better
+		// By default the CRF value can be from 4–63, and 10 is a good starting point. Lower values mean better quality.
 		// "-preset", "medium", // quality preset
-		// "-maxrate", "500k", // max bitrate. higher - better
+		// "-maxrate", "1M",
+		// "-minrate", "800K",
+		"-qmin", "0",
+		"-qmax", "50",
+		"-crf", "25",
 		// "-profile:v", "baseline", // https://trac.ffmpeg.org/wiki/Encode/H.264 - compatibility level
 		// "-level", "4.0", // ^^^
+		"-b:v", "1M",
 		"-f", format,
 		outfile.Name(),
 	)
-
-	var out bytes.Buffer
+	var (
+		outbuffer bytes.Buffer
+		out       bytes.Buffer
+		errout    bytes.Buffer
+	)
 	cmd.Stdout = &out
 
-	var errout bytes.Buffer
 	cmd.Stderr = &errout
 
 	err = cmd.Run()
@@ -60,10 +67,10 @@ func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer
 		return nil, err
 	}
 
-	output, err := ioutil.ReadAll(outfile)
+	_, err = io.Copy(&outbuffer, outfile)
 	if err != nil {
 		return nil, err
 	}
 
-	return bytes.NewBuffer(output), nil
+	return &outbuffer, nil
 }
