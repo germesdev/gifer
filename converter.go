@@ -57,6 +57,11 @@ func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer
 			"-crf", "25", // enable constant bitrate(0-51) lower - better
 			"-f", format,
 		}...)
+	case "jpg":
+		args = append(args, []string{
+			"-vframes", "1",
+			"-f", "image2",
+		}...)
 	}
 
 	args = append(args, outfile.Name())

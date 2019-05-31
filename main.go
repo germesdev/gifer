@@ -63,6 +63,8 @@ func parseFormat(format string) (string, error) {
 		return "mp4", nil
 	case "filters:gifv(webm)":
 		return "webm", nil
+	case "filters:format(jpg)", "filters:format(jpeg)":
+		return "jpg", nil
 	default:
 		return "", fmt.Errorf("bad format")
 	}
@@ -122,6 +124,16 @@ func processBuffer(w http.ResponseWriter, req *http.Request, inBuffer *bytes.Buf
 	log.Printf("[DEBUG] Process file -> Dimension: %s", dimension)
 	sourceSize := inBuffer.Len()
 
+	var xfilename, contentType string
+	switch format {
+	case "webm", "mp4":
+		xfilename = "video." + format
+		contentType = "video/" + format
+	case "jpg":
+		xfilename = "image." + format
+		contentType = "image/" + format
+	}
+
 	resBuffer, err := convert(inBuffer, format, dimension)
 	if err != nil {
 		log.Printf("[ERROR] Convert error %v", err)
@@ -135,8 +147,8 @@ func processBuffer(w http.ResponseWriter, req *http.Request, inBuffer *bytes.Buf
 
 	log.Printf("[DEBUG] File resized length after: %s", bytefmt.ByteSize(uint64(imageLen)))
 
-	w.Header().Set("X-Filename", "video."+format)
-	w.Header().Set("Content-Type", "video/"+format)
+	w.Header().Set("X-Filename", xfilename)
+	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Content-Length", strconv.Itoa(imageLen))
 	w.WriteHeader(http.StatusOK)
 	_, err = io.Copy(w, resBuffer)
