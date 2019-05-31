@@ -28,30 +28,46 @@ func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer
 	}
 	defer os.Remove(outfile.Name())
 
-	cmd := exec.Command("ffmpeg",
+	args := []string{
 		"-an", // disable audio
 		"-y",  // overwrite
 		// "-trans_color", "ffffff", // TODO read from input
 		"-i", inputfile.Name(), // set input
 		"-vf", dimensions,
-		// "-pix_fmt", "yuv420p",
-		// "-movflags", "frag_keyframe",
-		// "-movflags", "faststart",
-		// "-qmin", "10", // the minimum quantizer (default 4, range 0–63), lower - better quality --- VP9 only
-		// "-qmax", "42", // the maximum quantizer (default 63, range qmin–63) higher - lower quality --- VP9 only
-		// "-crf", "23", // enable constant bitrate(0-51) lower - better
-		// "-preset", "medium", // quality preset
-		// "-maxrate", "500k", // max bitrate. higher - better
-		// "-profile:v", "baseline", // https://trac.ffmpeg.org/wiki/Encode/H.264 - compatibility level
-		// "-level", "4.0", // ^^^
-		"-f", format,
-		outfile.Name(),
+		"-movflags", "faststart",
+	}
+
+	switch format {
+	case "webm":
+		args = append(args, []string{
+			"-qmin", "0", // the minimum quantizer (default 4, range 0–63), lower - better quality --- VP9 only
+			"-qmax", "50", // the maximum quantizer (default 63, range qmin–63) higher - lower quality --- VP9 only
+			"-crf", "20", // By default the CRF value can be from 4–63, and 10 is a good starting point. Lower values mean better quality.
+			"-b:v", "1M",
+			"-f", format,
+		}...)
+	case "mp4":
+		args = append(args, []string{
+			"-pix_fmt", "yuv420p",
+			"-preset", "medium", // quality preset
+			"-maxrate", "500k",
+			"-minrate", "250K",
+			"-profile:v", "high", // https://trac.ffmpeg.org/wiki/Encode/H.264 - compatibility level
+			"-level", "4.2", // ^^^
+			"-crf", "25", // enable constant bitrate(0-51) lower - better
+			"-f", format,
+		}...)
+	}
+
+	args = append(args, outfile.Name())
+
+	cmd := exec.Command("ffmpeg", args...)
+	var (
+		outbuffer bytes.Buffer
+		out       bytes.Buffer
+		errout    bytes.Buffer
 	)
-
-	var out bytes.Buffer
 	cmd.Stdout = &out
-
-	var errout bytes.Buffer
 	cmd.Stderr = &errout
 
 	err = cmd.Run()
@@ -60,10 +76,10 @@ func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer
 		return nil, err
 	}
 
-	output, err := ioutil.ReadAll(outfile)
+	_, err = io.Copy(&outbuffer, outfile)
 	if err != nil {
 		return nil, err
 	}
 
-	return bytes.NewBuffer(output), nil
+	return &outbuffer, nil
 }

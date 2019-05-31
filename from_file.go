@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"mime/multipart"
 
 	"log"
@@ -22,8 +22,11 @@ func resizeFromFileHandler(w http.ResponseWriter, req *http.Request) {
 		for _, hdr := range fheaders {
 			log.Printf("Income file len: %d", hdr.Size)
 
-			var err error
-			var infile multipart.File
+			var (
+				err       error
+				infile    multipart.File
+				outbuffer bytes.Buffer
+			)
 
 			if infile, err = hdr.Open(); err != nil {
 				log.Printf("[ERROR] Handle open error: %v", err)
@@ -32,14 +35,15 @@ func resizeFromFileHandler(w http.ResponseWriter, req *http.Request) {
 			}
 			defer infile.Close()
 
-			inbytes, err := ioutil.ReadAll(infile)
+			_, err = io.Copy(&outbuffer, infile)
+
 			if err != nil {
 				log.Printf("[ERROR] Create Read Input error %v", err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 
-			processBuffer(w, req, bytes.NewBuffer(inbytes))
+			processBuffer(w, req, &outbuffer)
 			return
 		}
 	}

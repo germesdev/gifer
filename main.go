@@ -131,7 +131,6 @@ func processBuffer(w http.ResponseWriter, req *http.Request, inBuffer *bytes.Buf
 
 	log.Printf("[DEBUG] File resized length before: %s", bytefmt.ByteSize(uint64(sourceSize)))
 
-	// output, _ := ioutil.ReadAll(outfile)
 	imageLen := resBuffer.Len()
 
 	log.Printf("[DEBUG] File resized length after: %s", bytefmt.ByteSize(uint64(imageLen)))
