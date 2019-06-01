@@ -52,9 +52,10 @@ func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer
 			"-preset", "medium", // quality preset
 			"-maxrate", "500k",
 			"-minrate", "250K",
-			"-profile:v", "high", // https://trac.ffmpeg.org/wiki/Encode/H.264 - compatibility level
-			"-level", "4.2", // ^^^
+			"-profile:v", "baseline", // https://trac.ffmpeg.org/wiki/Encode/H.264 - compatibility level
+			"-level", "3.1", // ^^^
 			"-crf", "25", // enable constant bitrate(0-51) lower - better
+			"-c:v", "libx264",
 			"-f", format,
 		}...)
 	case "jpg":
