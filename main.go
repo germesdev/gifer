@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -150,9 +149,12 @@ func processBuffer(w http.ResponseWriter, req *http.Request, inBuffer *bytes.Buf
 	w.Header().Set("X-Filename", xfilename)
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Content-Length", strconv.Itoa(imageLen))
-	w.WriteHeader(http.StatusOK)
-	_, err = io.Copy(w, resBuffer)
-	if err != nil {
-		log.Printf("[ERROR] Output write error %v", err)
-	}
+	w.Header().Set("Accept-Ranges", "bytes")
+	// w.WriteHeader(http.StatusOK)
+
+	http.ServeContent(w, req, xfilename, time.Time{}, bytes.NewReader(resBuffer.Bytes()))
+	// _, err = io.Copy(w, resBuffer)
+	// if err != nil {
+	// 	log.Printf("[ERROR] Output write error %v", err)
+	// }
 }

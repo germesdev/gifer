@@ -56,6 +56,7 @@ func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer
 			"-level", "3.1", // ^^^
 			"-crf", "25", // enable constant bitrate(0-51) lower - better
 			"-c:v", "libx264",
+			"-refs", "2",
 			"-f", format,
 		}...)
 	case "jpg":
