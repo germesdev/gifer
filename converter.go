@@ -40,10 +40,15 @@ func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer
 	switch format {
 	case "webm":
 		args = append(args, []string{
-			"-qmin", "0", // the minimum quantizer (default 4, range 0–63), lower - better quality --- VP9 only
-			"-qmax", "50", // the maximum quantizer (default 63, range qmin–63) higher - lower quality --- VP9 only
-			"-crf", "20", // By default the CRF value can be from 4–63, and 10 is a good starting point. Lower values mean better quality.
-			"-b:v", "1M",
+			"-pix_fmt", "yuva420p",
+			"-auto-alt-ref", "0",
+			"-qmin", "8", // the minimum quantizer (default 4, range 0–63), lower - better quality --- VP9 only
+			"-qmax", "63", // the maximum quantizer (default 63, range qmin–63) higher - lower quality --- VP9 only
+			"-crf", "25", // By default the CRF value can be from 4–63, and 10 is a good starting point. Lower values mean better quality.
+			"-maxrate", "500k",
+			"-minrate", "250K",
+			"-c:v", "libvpx",
+			"-b:v", "500k",
 			"-f", format,
 		}...)
 	case "mp4":
