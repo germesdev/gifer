@@ -50,7 +50,7 @@ func parseParams(req *http.Request) (string, string, error) {
 	)
 	dimension = parseDimension(mux.Vars(req)["dimension"])
 	if format, err = parseFormat(mux.Vars(req)["filters"]); err != nil {
-		log.Printf("[ERROR] Bad format: %s", err)
+		log.Printf("[ERROR] Bad format: %s %v", err, mux.Vars(req))
 		return "", "", err
 	}
 	return dimension, format, nil
