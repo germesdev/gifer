@@ -62,6 +62,8 @@ func parseFormat(format string) (string, error) {
 		return "mp4", nil
 	case "filters:gifv(webm)":
 		return "webm", nil
+	case "filters:gifv(webp)":
+		return "webp", nil
 	case "filters:format(jpg)", "filters:format(jpeg)":
 		return "jpg", nil
 	default:
@@ -128,7 +130,7 @@ func processBuffer(w http.ResponseWriter, req *http.Request, inBuffer *bytes.Buf
 	case "webm", "mp4":
 		xfilename = "video." + format
 		contentType = "video/" + format
-	case "jpg":
+	case "jpg", "webp":
 		xfilename = "image." + format
 		contentType = "image/" + format
 	}

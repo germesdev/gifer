@@ -22,7 +22,7 @@ func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer
 		return nil, fmt.Errorf("[ERROR] Copy inputfile error %v", err)
 	}
 
-	outfile, err := ioutil.TempFile("", "res*")
+	outfile, err := ioutil.TempFile("", "res*."+format)
 	if err != nil {
 		return nil, fmt.Errorf("[ERROR] Create Outfile error %v", err)
 	}
@@ -68,6 +68,15 @@ func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer
 		args = append(args, []string{
 			"-vframes", "1",
 			"-f", "image2",
+		}...)
+	case "webp":
+		args = append(args, []string{
+			"-pix_fmt", "yuv420p",
+			"-c:v", "libwebp",
+			"-lossless", "0", // enable lossles. 1 - enable
+			"-compression_level", "4", // Higher values give better quality for a given size. default - 4
+			"-q:v", "25",
+			// "-qscale", "75", // For lossy encoding, this controls image quality, 0 to 100
 		}...)
 	}
 
