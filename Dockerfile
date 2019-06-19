@@ -1,6 +1,6 @@
-FROM golang:1.12-alpine AS build-env
+FROM golang:1.12 AS build-env
 
-RUN apk update && apk add --no-cache curl git
+RUN apt-get update && apt-get install curl git
 
 WORKDIR /gifer
 
