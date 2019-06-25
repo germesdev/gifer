@@ -76,6 +76,7 @@ func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer
 			"-lossless", "0", // enable lossles. 1 - enable
 			"-compression_level", "4", // Higher values give better quality for a given size. default - 4
 			"-q:v", "25",
+			"-loop", "-1",
 			// "-qscale", "75", // For lossy encoding, this controls image quality, 0 to 100
 		}...)
 	}
