@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/caarlos0/env"
 	"github.com/cloudfoundry/bytefmt"
 	"github.com/gorilla/mux"
 )
@@ -18,6 +19,17 @@ import (
 const (
 	MB = 1 << 20
 )
+
+type Cfg struct {
+	WEBM_CRF  string `env:"WEBM_CRF" envDefault:"25"`
+	WEBM_QMIN string `env:"WEBM_QMIN" envDefault:"8"`
+}
+
+var config *Cfg
+
+func init() {
+	env.Parse(&config)
+}
 
 func main() {
 	port := os.Getenv("PORT")

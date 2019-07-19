@@ -42,9 +42,9 @@ func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer
 		args = append(args, []string{
 			"-pix_fmt", "yuva420p",
 			"-auto-alt-ref", "0",
-			"-qmin", "8", // the minimum quantizer (default 4, range 0–63), lower - better quality --- VP9 only
-			"-qmax", "63", // the maximum quantizer (default 63, range qmin–63) higher - lower quality --- VP9 only
-			"-crf", "25", // By default the CRF value can be from 4–63, and 10 is a good starting point. Lower values mean better quality.
+			"-qmin", config.WEBM_QMIN, // the minimum quantizer (default 4, range 0–63), lower - better quality
+			"-qmax", "63", // the maximum quantizer (default 63, range qmin–63) higher - lower quality
+			"-crf", config.WEBM_CRF, // By default the CRF value can be from 4–63, and 10 is a good starting point. Lower values mean better quality.
 			"-maxrate", "500k",
 			"-minrate", "250K",
 			"-c:v", "libvpx",
