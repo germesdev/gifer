@@ -18,6 +18,8 @@ func resizeFromFileHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	defer req.MultipartForm.RemoveAll()
+
 	for _, fheaders := range req.MultipartForm.File {
 		for _, hdr := range fheaders {
 			log.Printf("Income file len: %d", hdr.Size)
