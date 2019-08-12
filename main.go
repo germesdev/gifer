@@ -25,7 +25,7 @@ type Cfg struct {
 	WEBM_QMIN string `env:"WEBM_QMIN" envDefault:"8"`
 }
 
-var config *Cfg
+var config Cfg
 
 func main() {
 	err := env.Parse(&config)
