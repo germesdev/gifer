@@ -27,11 +27,12 @@ type Cfg struct {
 
 var config *Cfg
 
-func init() {
-	env.Parse(&config)
-}
-
 func main() {
+	err := env.Parse(&config)
+	if err != nil {
+		panic(err)
+	}
+
 	port := os.Getenv("PORT")
 	if len(port) == 0 {
 		port = "8080"
