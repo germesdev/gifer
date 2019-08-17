@@ -22,6 +22,10 @@ func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer
 		return nil, fmt.Errorf("[ERROR] Copy inputfile error %v", err)
 	}
 
+	if format == "gif" {
+		return convertToGif(src, dimensions, inputfile)
+	}
+
 	outfile, err := ioutil.TempFile("", "res*."+format)
 	if err != nil {
 		return nil, fmt.Errorf("[ERROR] Create Outfile error %v", err)
@@ -79,6 +83,17 @@ func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer
 			"-loop", "0",
 			// "-qscale", "75", // For lossy encoding, this controls image quality, 0 to 100
 		}...)
+	case "gif":
+		args = append(args, []string{
+			// "-pix_fmt", "yuv420p",
+			// "-c:v", "libwebp",
+			// "-lossless", "0", // enable lossles. 1 - enable
+			// "-compression_level", "4", // Higher values give better quality for a given size. default - 4
+			// "-q:v", "25",
+			// "-loop", "0",
+			"-f", "gif",
+			// "-qscale", "75", // For lossy encoding, this controls image quality, 0 to 100
+		}...)
 	}
 
 	args = append(args, outfile.Name())
@@ -98,6 +113,63 @@ func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer
 		return nil, err
 	}
 
+	_, err = io.Copy(&outbuffer, outfile)
+	if err != nil {
+		return nil, err
+	}
+
+	return &outbuffer, nil
+}
+
+func convertToGif(src *bytes.Buffer, dimensions string, inputfile *os.File) (*bytes.Buffer, error) {
+	outfile, err := ioutil.TempFile("", "res*.gif")
+	if err != nil {
+		return nil, fmt.Errorf("[ERROR] Create Outfile error %v", err)
+	}
+	defer os.Remove(outfile.Name())
+
+	palette, err := ioutil.TempFile("", "palette*.png")
+	if err != nil {
+		return nil, fmt.Errorf("[ERROR] Create Outfile error %v", err)
+	}
+	defer os.Remove(palette.Name())
+
+	filters := "fps=15," + dimensions //+ ":flags=lanczos"
+
+	paletteArgs := []string{
+		"-i", inputfile.Name(),
+		"-vf", filters + ",palettegen",
+		"-y", palette.Name(),
+	}
+
+	paletteCmd := exec.Command("ffmpeg", paletteArgs...)
+	var errOut bytes.Buffer
+	paletteCmd.Stderr = &errOut
+
+	err = paletteCmd.Run()
+	if err != nil {
+		log.Printf("[ERROR] FFmpeg command : %v, %v\n", err, errOut.String())
+		return nil, err
+	}
+
+	convertArgs := []string{
+		"-i", inputfile.Name(),
+		"-i", palette.Name(),
+		"-lavfi", filters + " [x]; [x][1:v] paletteuse",
+		"-y", outfile.Name(),
+	}
+
+	convertCmd := exec.Command("ffmpeg", convertArgs...)
+	errOut = bytes.Buffer{}
+	convertCmd.Stderr = &errOut
+
+	err = convertCmd.Run()
+	if err != nil {
+		log.Printf("[ERROR] FFmpeg command : %v, %v\n", err, errOut.String())
+		return nil, err
+	}
+
+	var outbuffer bytes.Buffer
 	_, err = io.Copy(&outbuffer, outfile)
 	if err != nil {
 		return nil, err
