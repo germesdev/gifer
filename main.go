@@ -40,6 +40,7 @@ func main() {
 	r := mux.NewRouter()
 
 	log.Printf("Start gifer server on %s", port)
+
 	r.SkipClean(true)
 	r.HandleFunc(`/unsafe/{dimension:\d+x\d+}/{filters:filters:\w{3,}\(.*\)}/{source:.*}`, resizeFromURLHandler).Methods("GET")
 	r.HandleFunc(`/unsafe/{dimension:\d+x\d+}/{filters:filters:\w{3,}\(.*\)}/{source:.*}`, resizeFromFileHandler).Methods("POST")
