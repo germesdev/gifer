@@ -12,6 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
+      - name: Run tests
+        run: |
+          docker build -t test . -f test.Dockerfile
       - name: Build the Docker image
         run: |
           docker build -t pile.mdk.zone/mdkbackend/gifer:circle .
