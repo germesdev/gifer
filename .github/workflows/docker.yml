@@ -4,8 +4,7 @@ on:
   push:
     branches:
       - master
-      - release/*
-      - actions_docker
+      - release
 
 jobs:
   build:
@@ -14,8 +13,7 @@ jobs:
       - uses: actions/checkout@v1
       - name: Run tests
         run: |
-          docker build -t test . -f test.Dockerfile
-          docker run test
+          docker build -t test . -f Test.Dockerfile
       - name: Build the Docker image
         run: |
           docker build -t pile.mdk.zone/mdkbackend/gifer:circle .

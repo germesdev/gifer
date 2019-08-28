@@ -9,5 +9,4 @@ COPY *.go ./
 
 RUN apt update && apt-get install ffmpeg -y
 
-ENTRYPOINT ["go", "test", "-race", "."]
-
+RUN go test -race .
