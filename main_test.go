@@ -16,7 +16,7 @@ func TestVersionHandler(t *testing.T) {
 		rr := httptest.NewRecorder()
 		versionHandler().ServeHTTP(rr, req)
 
-		if status := rr.Code; status != http.StatusInternalServerError {
+		if status := rr.Code; status != http.StatusOK {
 			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusInternalServerError)
 		}
 	})

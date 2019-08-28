@@ -15,6 +15,7 @@ jobs:
       - name: Run tests
         run: |
           docker build -t test . -f test.Dockerfile
+          docker run test
       - name: Build the Docker image
         run: |
           docker build -t pile.mdk.zone/mdkbackend/gifer:circle .
