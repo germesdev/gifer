@@ -4,7 +4,7 @@ workflow "Build" {
 }
 
 action "Docker login" {
-  uses = "./docker-login"
+  uses = "fishbullet/golang-actions@master"
   env = {
     MY_NAME = "Bobby"
   }
