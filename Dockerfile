@@ -1,7 +1,5 @@
 FROM golang:1.12 AS build-env
 
-RUN apt-get update && apt-get install curl git
-
 WORKDIR /gifer
 
 COPY go.mod go.sum ./
