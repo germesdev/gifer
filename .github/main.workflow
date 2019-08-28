@@ -8,7 +8,6 @@ action "Test" {
   args = "go test ."
 }
 
-
 action "Docker Login" {
   uses = "actions/docker/login@master"
   secrets = ["secrets.$DOCKER_USER", "secrets.$DOCKER_PASS"]
