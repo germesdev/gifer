@@ -1,4 +1,4 @@
-workflow "Main" {
+workflow "Test && Build" {
   on = "pull_request"
   resolves = ["Test", "Docker login"]
 }
