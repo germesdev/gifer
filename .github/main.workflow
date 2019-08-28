@@ -1,6 +1,6 @@
-workflow "Test" {
+workflow "Main" {
   on = "pull_request"
-  resolves = ["Test"]
+  resolves = ["Test", "Docker login"]
 }
 
 action "Test" {
