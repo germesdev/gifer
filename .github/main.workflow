@@ -1,6 +1,11 @@
-workflow "Build" {
+workflow "Test && Publish" {
   on = "pull_request"
   resolves = ["Docker login"]
+}
+
+action "Test" {
+  uses = "./actions/test"
+  args = "go test ."
 }
 
 action "Docker login" {
