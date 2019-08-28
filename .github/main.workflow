@@ -10,4 +10,3 @@ action "Docker login" {
   }
   args = "go version"
 }
-
