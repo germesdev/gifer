@@ -10,7 +10,7 @@ action "Test" {
 
 action "Docker login" {
   uses = "actions/docker/login@master"
-  secrets = ["secrets.$DOCKER_USER", "secrets.$DOCKER_PASS"]
+  secrets = ["secrets.DOCKER_USER", "secrets.DOCKER_PASS"]
   env = {
     DOCKER_REGISTRY_URL = "pile.mdk.zone"
   }
