@@ -20,4 +20,23 @@ jobs:
         uses: fishbullet/golang-actions@master
         with:
           args: go test .
+  # build:
+
+  #   runs-on: ubuntu-18.04
+    
+  #   steps:
+  #     action "Docker Login" {
+  #       uses = "actions/docker/login@master"
+  #       secrets = ["DOCKER_USERNAME", "DOCKER_PASSWORD"]
+  #     }
+  #     - name: Check golang version
+  #       uses: fishbullet/golang-actions@master
+  #       with:
+  #         args: go version
+  #     - name: Checkout git repository
+  #       uses: actions/checkout@v1
+  #     - name: Run gifer tests
+  #       uses: fishbullet/golang-actions@master
+  #       with:
+  #         args: go test .
 
