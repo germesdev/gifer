@@ -15,7 +15,10 @@ func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer
 	if err != nil {
 		return nil, fmt.Errorf("[ERROR] Create Input error %v", err)
 	}
-	defer os.Remove(inputfile.Name())
+	defer func() {
+		err := os.Remove(inputfile.Name())
+		log.Printf("[ERROR] Cant delete inputfile %s error %s\n", inputfile.Name(), err)
+	}()
 
 	_, err = io.Copy(inputfile, src)
 	if err != nil {
@@ -30,7 +33,10 @@ func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer
 	if err != nil {
 		return nil, fmt.Errorf("[ERROR] Create Outfile error %v", err)
 	}
-	defer os.Remove(outfile.Name())
+	defer func() {
+		err := os.Remove(outfile.Name())
+		log.Printf("[ERROR] Cant delete outfile %s error %s\n", outfile.Name(), err)
+	}()
 
 	args := []string{
 		"-an", // disable audio

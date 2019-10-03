@@ -18,7 +18,10 @@ func resizeFromFileHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	defer req.MultipartForm.RemoveAll()
+	defer func() {
+		err := req.MultipartForm.RemoveAll()
+		log.Printf("[ERROR] Cant delete multipart error %s\n", err)
+	}()
 
 	for _, fheaders := range req.MultipartForm.File {
 		for _, hdr := range fheaders {
