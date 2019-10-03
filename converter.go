@@ -17,7 +17,9 @@ func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer
 	}
 	defer func() {
 		err := os.Remove(inputfile.Name())
-		log.Printf("[ERROR] Cant delete inputfile %s error %s\n", inputfile.Name(), err)
+		if err != nil {
+			log.Printf("[ERROR] Cant delete inputfile %s error %s\n", inputfile.Name(), err)
+		}
 	}()
 
 	_, err = io.Copy(inputfile, src)
@@ -35,7 +37,9 @@ func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer
 	}
 	defer func() {
 		err := os.Remove(outfile.Name())
-		log.Printf("[ERROR] Cant delete outfile %s error %s\n", outfile.Name(), err)
+		if err != nil {
+			log.Printf("[ERROR] Cant delete outfile %s error %s\n", outfile.Name(), err)
+		}
 	}()
 
 	args := []string{
