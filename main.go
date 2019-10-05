@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -11,7 +12,10 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
+
+	"crypto/md5"
 
 	"github.com/caarlos0/env"
 	"github.com/cloudfoundry/bytefmt"
@@ -29,28 +33,41 @@ type Cfg struct {
 }
 
 type locker struct {
-	paths map[string]bool
+	ll       sync.Mutex
+	entiries map[string]bool
 }
 
 var (
 	config Cfg
-	lock   = locker{paths: map[string]bool{}}
+	lock   = locker{entiries: map[string]bool{}}
 )
 
-func (l *locker) lock(url string) {
-	l.paths[url] = true
+func (l *locker) lock(sum string) {
+	l.ll.Lock()
+	defer l.ll.Unlock()
+	l.entiries[sum] = true
 }
 
-func (l *locker) locked(url string) bool {
-	_, ok := l.paths[url]
+func (l *locker) locked(sum string) bool {
+	l.ll.Lock()
+	defer l.ll.Unlock()
+	_, ok := l.entiries[sum]
 	if !ok {
 		return false
 	}
 	return true
 }
 
-func (l *locker) unlock(url string) {
-	delete(l.paths, url)
+func (l *locker) unlock(sum string) {
+	l.ll.Lock()
+	defer l.ll.Unlock()
+	delete(l.entiries, sum)
+}
+
+func getSum(str string) string {
+	hash := md5.New()
+	io.WriteString(hash, str)
+	return fmt.Sprintf("%x", hash.Sum(nil))
 }
 
 func main() {
@@ -58,13 +75,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	go func() {
-		for {
-			log.Printf("%+v", lock)
-			time.Sleep(time.Second * 5)
-		}
-	}()
 
 	port := os.Getenv("PORT")
 	if len(port) == 0 {
@@ -91,7 +101,9 @@ func main() {
 		ReadTimeout:  long, // big file
 	}
 
-	go srv.ListenAndServe()
+	go func() {
+		log.Println(srv.ListenAndServe())
+	}()
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt)
 	<-shutdown // Block until signal received

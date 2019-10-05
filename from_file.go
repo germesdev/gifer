@@ -13,15 +13,22 @@ import (
 
 func resizeFromFileHandler(w http.ResponseWriter, req *http.Request) {
 	log.Println("[DEBUG] Hit resize from FILE ...")
-	requestURL := fmt.Sprintf("%s", req.URL)
 
-	if lock.locked(requestURL) {
+	sum := getSum(
+		fmt.Sprintf(
+			"%s|%s",
+			req.URL,
+			req.Header.Get("Content-Length"),
+		),
+	)
+
+	if lock.locked(sum) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	lock.lock(requestURL)
-	defer lock.unlock(requestURL)
+	lock.lock(sum)
+	defer lock.unlock(sum)
 
 	if err := req.ParseMultipartForm(50 * MB); nil != err {
 		log.Printf("[ERROR] while parse: %s", err)
