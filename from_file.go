@@ -69,7 +69,6 @@ func resizeFromFileHandler(w http.ResponseWriter, req *http.Request) {
 			}
 
 			processBuffer(w, req, &outbuffer)
-			time.Sleep(time.Second * 10)
 			return
 		}
 	}
