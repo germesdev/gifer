@@ -6,7 +6,7 @@ import (
 )
 
 type ConvertManager struct {
-	ResultsQueue map[string]ConvertQueue
+	ResultsQueue map[string]*ConvertQueue
 	ResultsLock  sync.Mutex
 }
 
@@ -22,7 +22,7 @@ type ConvertResult struct {
 
 func NewConvertManager() *ConvertManager {
 	return &ConvertManager{
-		ResultsQueue: map[string]ConvertQueue{},
+		ResultsQueue: map[string]*ConvertQueue{},
 	}
 }
 

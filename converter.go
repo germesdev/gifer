@@ -25,15 +25,16 @@ func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer
 			Results: make(chan ConvertResult, 100),
 			Waiting: 1,
 		}
-		convertQueue.ResultsQueue[cksum] = cv
-		results = cv
+		convertQueue.ResultsQueue[cksum] = &cv
+		results = &cv
 		go func() {
 			b, e := convertExec(src, format, dimensions)
 			for {
-				cv.Results <- ConvertResult{Data: b, Error: e}
+				bufferCopy := bytes.NewBuffer(b.Bytes())
+				cv.Results <- ConvertResult{Data: bufferCopy, Error: e}
 				remaining := atomic.AddInt32(&cv.Waiting, -1)
-				fmt.Println("Result pushed", remaining)
 				if remaining == 0 {
+					delete(convertQueue.ResultsQueue, cksum)
 					break
 				}
 			}
