@@ -2,15 +2,53 @@ package main
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
+	"sync/atomic"
 )
 
 func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer, error) {
+	hasher := sha256.New()
+	cksum := hex.EncodeToString(hasher.Sum(nil))
+
+	convertQueue.ResultsLock.Lock()
+	results, exists := convertQueue.ResultsQueue[cksum]
+
+	if !exists {
+		cv := ConvertQueue{
+			Results: make(chan ConvertResult, 100),
+			Waiting: 1,
+		}
+		convertQueue.ResultsQueue[cksum] = &cv
+		results = &cv
+		go func() {
+			b, e := convertExec(src, format, dimensions)
+			for {
+				bufferCopy := bytes.NewBuffer(b.Bytes())
+				cv.Results <- ConvertResult{Data: bufferCopy, Error: e}
+				remaining := atomic.AddInt32(&cv.Waiting, -1)
+				if remaining == 0 {
+					delete(convertQueue.ResultsQueue, cksum)
+					break
+				}
+			}
+		}()
+	} else {
+		atomic.AddInt32(&results.Waiting, 1)
+	}
+	convertQueue.ResultsLock.Unlock()
+
+	res := <-results.Results
+	return res.Data, res.Error
+}
+
+func convertExec(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer, error) {
 	inputfile, err := ioutil.TempFile("", "*")
 	if err != nil {
 		return nil, fmt.Errorf("[ERROR] Create Input error %v", err)
