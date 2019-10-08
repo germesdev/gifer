@@ -2,11 +2,13 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strconv"
 	"strings"
 	"time"
@@ -17,7 +19,8 @@ import (
 )
 
 const (
-	MB = 1 << 20
+	MB       = 1 << 20
+	Minutes5 = time.Minute * 5
 )
 
 type Cfg struct {
@@ -25,7 +28,9 @@ type Cfg struct {
 	WEBM_QMIN string `env:"WEBM_QMIN" envDefault:"8"`
 }
 
-var config Cfg
+var (
+	config Cfg
+)
 
 func main() {
 	err := env.Parse(&config)
@@ -42,6 +47,11 @@ func main() {
 	log.Printf("Start gifer server on %s", port)
 
 	r.SkipClean(true)
+
+	r.HandleFunc("/healthz", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(200)
+	})).Methods("GET")
+
 	r.HandleFunc(`/unsafe/{dimension:\d+x\d+}/{filters:filters:\w{3,}\(.*\)}/{source:.*}`, resizeFromURLHandler).Methods("GET")
 	r.HandleFunc(`/unsafe/{dimension:\d+x\d+}/{filters:filters:\w{3,}\(.*\)}/{source:.*}`, resizeFromFileHandler).Methods("POST")
 	r.HandleFunc(`/unsafe/{dimension:\d+x\d+}/{filters:filters:\w{3,}\(.*\)}`, resizeFromFileHandler).Methods("POST")
@@ -49,11 +59,23 @@ func main() {
 	srv := &http.Server{
 		Handler:      r,
 		Addr:         "0.0.0.0:" + port,
-		WriteTimeout: 5 * time.Minute, // big file
-		ReadTimeout:  5 * time.Minute, // big file
+		WriteTimeout: Minutes5, // big file
+		ReadTimeout:  Minutes5, // big file
 	}
 
-	log.Fatal(srv.ListenAndServe())
+	go func() {
+		log.Println(srv.ListenAndServe())
+	}()
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, os.Interrupt)
+	<-shutdown // Block until signal received
+	log.Println("Gifer prepares for shutdown ...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), Minutes5)
+	defer cancel()
+	srv.Shutdown(ctx)
+
+	log.Println("Gifer goes shutdown ...")
 }
 
 func parseParams(req *http.Request) (string, string, error) {
@@ -168,11 +190,6 @@ func processBuffer(w http.ResponseWriter, req *http.Request, inBuffer *bytes.Buf
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Content-Length", strconv.Itoa(imageLen))
 	w.Header().Set("Accept-Ranges", "bytes")
-	// w.WriteHeader(http.StatusOK)
 
 	http.ServeContent(w, req, xfilename, time.Time{}, bytes.NewReader(resBuffer.Bytes()))
-	// _, err = io.Copy(w, resBuffer)
-	// if err != nil {
-	// 	log.Printf("[ERROR] Output write error %v", err)
-	// }
 }
