@@ -19,8 +19,8 @@ import (
 )
 
 const (
-	MB   = 1 << 20
-	long = time.Minute * 5
+	MB       = 1 << 20
+	Minutes5 = time.Minute * 5
 )
 
 type Cfg struct {
@@ -59,8 +59,8 @@ func main() {
 	srv := &http.Server{
 		Handler:      r,
 		Addr:         "0.0.0.0:" + port,
-		WriteTimeout: long, // big file
-		ReadTimeout:  long, // big file
+		WriteTimeout: Minutes5, // big file
+		ReadTimeout:  Minutes5, // big file
 	}
 
 	go func() {
@@ -71,7 +71,7 @@ func main() {
 	<-shutdown // Block until signal received
 	log.Println("Gifer prepares for shutdown ...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), long)
+	ctx, cancel := context.WithTimeout(context.Background(), Minutes5)
 	defer cancel()
 	srv.Shutdown(ctx)
 
