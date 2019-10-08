@@ -7,6 +7,9 @@ require (
 	github.com/gorilla/mux v1.7.2
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
+	github.com/rs/cors v1.7.0 // indirect
 	github.com/stretchr/testify v1.3.0 // indirect
 	golang.org/x/image v0.0.0-20180926015637-991ec62608f3
 )
+
+go 1.13
