@@ -2,10 +2,8 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"mime/multipart"
-	"time"
 
 	"log"
 	"net/http"
@@ -13,22 +11,6 @@ import (
 
 func resizeFromFileHandler(w http.ResponseWriter, req *http.Request) {
 	log.Println("[DEBUG] Hit resize from FILE ...")
-
-	sum := getSum(
-		fmt.Sprintf(
-			"%s|%s",
-			req.URL,
-			req.Header.Get("Content-Length"),
-		),
-	)
-
-	if lock.locked(sum) {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	lock.lock(sum)
-	defer lock.unlock(sum)
 
 	if err := req.ParseMultipartForm(50 * MB); nil != err {
 		log.Printf("[ERROR] while parse: %s", err)

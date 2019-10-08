@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -12,10 +11,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
-
-	"crypto/md5"
 
 	"github.com/caarlos0/env"
 	"github.com/cloudfoundry/bytefmt"
@@ -32,43 +28,9 @@ type Cfg struct {
 	WEBM_QMIN string `env:"WEBM_QMIN" envDefault:"8"`
 }
 
-type locker struct {
-	ll       sync.Mutex
-	entiries map[string]bool
-}
-
 var (
 	config Cfg
-	lock   = locker{entiries: map[string]bool{}}
 )
-
-func (l *locker) lock(sum string) {
-	l.ll.Lock()
-	defer l.ll.Unlock()
-	l.entiries[sum] = true
-}
-
-func (l *locker) locked(sum string) bool {
-	l.ll.Lock()
-	defer l.ll.Unlock()
-	_, ok := l.entiries[sum]
-	if !ok {
-		return false
-	}
-	return true
-}
-
-func (l *locker) unlock(sum string) {
-	l.ll.Lock()
-	defer l.ll.Unlock()
-	delete(l.entiries, sum)
-}
-
-func getSum(str string) string {
-	hash := md5.New()
-	io.WriteString(hash, str)
-	return fmt.Sprintf("%x", hash.Sum(nil))
-}
 
 func main() {
 	err := env.Parse(&config)
