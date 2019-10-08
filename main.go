@@ -2,11 +2,13 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strconv"
 	"strings"
 	"time"
@@ -17,7 +19,8 @@ import (
 )
 
 const (
-	MB = 1 << 20
+	MB   = 1 << 20
+	long = time.Minute * 5
 )
 
 type Cfg struct {
@@ -25,13 +28,43 @@ type Cfg struct {
 	WEBM_QMIN string `env:"WEBM_QMIN" envDefault:"8"`
 }
 
-var config Cfg
+type locker struct {
+	paths map[string]bool
+}
+
+var (
+	config Cfg
+	lock   = locker{paths: map[string]bool{}}
+)
+
+func (l *locker) lock(url string) {
+	l.paths[url] = true
+}
+
+func (l *locker) locked(url string) bool {
+	_, ok := l.paths[url]
+	if !ok {
+		return false
+	}
+	return true
+}
+
+func (l *locker) unlock(url string) {
+	delete(l.paths, url)
+}
 
 func main() {
 	err := env.Parse(&config)
 	if err != nil {
 		panic(err)
 	}
+
+	go func() {
+		for {
+			log.Printf("%+v", lock)
+			time.Sleep(time.Second * 5)
+		}
+	}()
 
 	port := os.Getenv("PORT")
 	if len(port) == 0 {
@@ -42,6 +75,11 @@ func main() {
 	log.Printf("Start gifer server on %s", port)
 
 	r.SkipClean(true)
+
+	r.HandleFunc("/healthz", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(200)
+	})).Methods("GET")
+
 	r.HandleFunc(`/unsafe/{dimension:\d+x\d+}/{filters:filters:\w{3,}\(.*\)}/{source:.*}`, resizeFromURLHandler).Methods("GET")
 	r.HandleFunc(`/unsafe/{dimension:\d+x\d+}/{filters:filters:\w{3,}\(.*\)}/{source:.*}`, resizeFromFileHandler).Methods("POST")
 	r.HandleFunc(`/unsafe/{dimension:\d+x\d+}/{filters:filters:\w{3,}\(.*\)}`, resizeFromFileHandler).Methods("POST")
@@ -49,11 +87,21 @@ func main() {
 	srv := &http.Server{
 		Handler:      r,
 		Addr:         "0.0.0.0:" + port,
-		WriteTimeout: 5 * time.Minute, // big file
-		ReadTimeout:  5 * time.Minute, // big file
+		WriteTimeout: long, // big file
+		ReadTimeout:  long, // big file
 	}
 
-	log.Fatal(srv.ListenAndServe())
+	go srv.ListenAndServe()
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, os.Interrupt)
+	<-shutdown // Block until signal received
+	log.Println("Gifer prepares for shutdown ...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), long)
+	defer cancel()
+	srv.Shutdown(ctx)
+
+	log.Println("Gifer goes shutdown ...")
 }
 
 func parseParams(req *http.Request) (string, string, error) {
@@ -168,11 +216,6 @@ func processBuffer(w http.ResponseWriter, req *http.Request, inBuffer *bytes.Buf
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Content-Length", strconv.Itoa(imageLen))
 	w.Header().Set("Accept-Ranges", "bytes")
-	// w.WriteHeader(http.StatusOK)
 
 	http.ServeContent(w, req, xfilename, time.Time{}, bytes.NewReader(resBuffer.Bytes()))
-	// _, err = io.Copy(w, resBuffer)
-	// if err != nil {
-	// 	log.Printf("[ERROR] Output write error %v", err)
-	// }
 }
