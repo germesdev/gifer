@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -14,10 +13,7 @@ import (
 )
 
 func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer, error) {
-	hasher := sha256.New()
-	io.Copy(hasher, bytes.NewBuffer(src.Bytes()))
-	cksum := hex.EncodeToString(hasher.Sum(nil))
-	fmt.Println("Checksum", cksum)
+	cksum := fmt.Sprintf("%x", sha256.Sum256(src.Bytes()))
 
 	convertQueue.ResultsLock.Lock()
 	results, exists := convertQueue.ResultsQueue[cksum]
