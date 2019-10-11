@@ -15,7 +15,9 @@ import (
 
 func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer, error) {
 	hasher := sha256.New()
-	cksum := hex.EncodeToString(hasher.Sum(src.Bytes()))
+	io.Copy(hasher, bytes.NewBuffer(src.Bytes()))
+	cksum := hex.EncodeToString(hasher.Sum(nil))
+	fmt.Println("Checksum", cksum)
 
 	convertQueue.ResultsLock.Lock()
 	results, exists := convertQueue.ResultsQueue[cksum]
