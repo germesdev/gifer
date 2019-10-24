@@ -13,7 +13,11 @@ import (
 )
 
 func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer, error) {
-	cksum := fmt.Sprintf("%x", sha256.Sum256(src.Bytes()))
+	hash := sha256.New()
+	hash.Write(src.Bytes())
+	hash.Write([]byte(format + dimensions))
+	sum := hash.Sum(nil)
+	cksum := fmt.Sprintf("%x", sum)
 
 	convertQueue.ResultsLock.Lock()
 	results, exists := convertQueue.ResultsQueue[cksum]
