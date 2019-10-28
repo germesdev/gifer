@@ -33,6 +33,8 @@ var (
 )
 
 func main() {
+	log.SetFormatter(&log.JSONFormatter{})
+
 	err := env.Parse(&config)
 	if err != nil {
 		panic(err)
