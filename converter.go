@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"sync/atomic"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func convert(src *bytes.Buffer, format string, dimensions string) (*bytes.Buffer, error) {
@@ -58,7 +59,7 @@ func convertExec(src *bytes.Buffer, format string, dimensions string) (*bytes.Bu
 	defer func() {
 		err := os.Remove(inputfile.Name())
 		if err != nil {
-			log.Printf("[ERROR] Cant delete inputfile %s error %s\n", inputfile.Name(), err)
+			log.Errorf("Cant delete inputfile %s error %s", inputfile.Name(), err)
 		}
 	}()
 
@@ -78,7 +79,7 @@ func convertExec(src *bytes.Buffer, format string, dimensions string) (*bytes.Bu
 	defer func() {
 		err := os.Remove(outfile.Name())
 		if err != nil {
-			log.Printf("[ERROR] Cant delete outfile %s error %s\n", outfile.Name(), err)
+			log.Errorf("Cant delete outfile %s error %s\n", outfile.Name(), err)
 		}
 	}()
 
@@ -159,7 +160,7 @@ func convertExec(src *bytes.Buffer, format string, dimensions string) (*bytes.Bu
 
 	err = cmd.Run()
 	if err != nil {
-		log.Printf("[ERROR] FFmpeg command : %v, %v, %v\n", err, out.String(), errout.String())
+		log.Errorf("FFmpeg command : %v, %v, %v\n", err, out.String(), errout.String())
 		return nil, err
 	}
 
@@ -198,7 +199,7 @@ func convertToGif(src *bytes.Buffer, dimensions string, inputfile *os.File) (*by
 
 	err = paletteCmd.Run()
 	if err != nil {
-		log.Printf("[ERROR] FFmpeg command : %v, %v\n", err, errOut.String())
+		log.Errorf("FFmpeg command : %v, %v\n", err, errOut.String())
 		return nil, err
 	}
 
@@ -215,7 +216,7 @@ func convertToGif(src *bytes.Buffer, dimensions string, inputfile *os.File) (*by
 
 	err = convertCmd.Run()
 	if err != nil {
-		log.Printf("[ERROR] FFmpeg command : %v, %v\n", err, errOut.String())
+		log.Errorf("FFmpeg command : %v, %v\n", err, errOut.String())
 		return nil, err
 	}
 

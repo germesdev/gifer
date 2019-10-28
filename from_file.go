@@ -5,15 +5,16 @@ import (
 	"io"
 	"mime/multipart"
 
-	"log"
 	"net/http"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func resizeFromFileHandler(w http.ResponseWriter, req *http.Request) {
-	log.Println("[DEBUG] Hit resize from FILE ...")
+	log.Trace("Hit resize from FILE")
 
 	if err := req.ParseMultipartForm(50 * MB); nil != err {
-		log.Printf("[ERROR] while parse: %s", err)
+		log.Error("while parse", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -21,13 +22,13 @@ func resizeFromFileHandler(w http.ResponseWriter, req *http.Request) {
 	defer func() {
 		err := req.MultipartForm.RemoveAll()
 		if err != nil {
-			log.Printf("[ERROR] Cant delete multipart error %s\n", err)
+			log.Error("Cant delete multipart error", err)
 		}
 	}()
 
 	for _, fheaders := range req.MultipartForm.File {
 		for _, hdr := range fheaders {
-			log.Printf("Income file len: %d", hdr.Size)
+			log.Tracef("Income file len: %d", hdr.Size)
 
 			var (
 				err       error
@@ -36,18 +37,18 @@ func resizeFromFileHandler(w http.ResponseWriter, req *http.Request) {
 			)
 
 			if infile, err = hdr.Open(); err != nil {
-				log.Printf("[ERROR] Handle open error: %v", err)
+				log.Errorf("Handle open error: %v", err)
 				w.WriteHeader(http.StatusInternalServerError)
-				return
+				continue
 			}
 			defer infile.Close()
 
 			_, err = io.Copy(&outbuffer, infile)
 
 			if err != nil {
-				log.Printf("[ERROR] Create Read Input error %v", err)
+				log.Errorf("Create Read Input error %v", err)
 				w.WriteHeader(http.StatusInternalServerError)
-				return
+				continue
 			}
 
 			processBuffer(w, req, &outbuffer)

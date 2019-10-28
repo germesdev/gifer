@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -16,6 +15,7 @@ import (
 	"github.com/caarlos0/env"
 	"github.com/cloudfoundry/bytefmt"
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -64,18 +64,18 @@ func main() {
 	}
 
 	go func() {
-		log.Println(srv.ListenAndServe())
+		log.Info(srv.ListenAndServe())
 	}()
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt)
 	<-shutdown // Block until signal received
-	log.Println("Gifer prepares for shutdown ...")
+	log.Info("Gifer prepares for shutdown ...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), Minutes5)
 	defer cancel()
 	srv.Shutdown(ctx)
 
-	log.Println("Gifer goes shutdown ...")
+	log.Info("Gifer goes shutdown ...")
 }
 
 func parseParams(req *http.Request) (string, string, error) {
@@ -86,7 +86,7 @@ func parseParams(req *http.Request) (string, string, error) {
 	)
 	dimension = parseDimension(mux.Vars(req)["dimension"])
 	if format, err = parseFormat(mux.Vars(req)["filters"]); err != nil {
-		log.Printf("[ERROR] Bad format: %s %v", err, mux.Vars(req))
+		log.Errorf("Bad format: %s %v", err, mux.Vars(req))
 		return "", "", err
 	}
 	return dimension, format, nil
@@ -130,7 +130,7 @@ func parseDimension(dim string) string {
 
 func versionHandler() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		log.Println("[DEBUG] Hit version")
+		log.Trace("Hit version")
 		cmd := exec.Command("ffmpeg", "--help")
 
 		var out bytes.Buffer
@@ -142,11 +142,11 @@ func versionHandler() http.HandlerFunc {
 		err := cmd.Run()
 
 		if err != nil {
-			log.Printf("[ERROR] FFmpeg output: %v, %v, %v\n", err, out.String(), errout.String())
+			log.Errorf("FFmpeg output: %v, %v, %v\n", err, out.String(), errout.String())
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		log.Printf("[DEBUG] FFmpeg output: %v", out.String())
+		log.Errorf("FFmpeg output: %v", out.String())
 
 		w.WriteHeader(http.StatusOK)
 	})
@@ -155,12 +155,12 @@ func versionHandler() http.HandlerFunc {
 func processBuffer(w http.ResponseWriter, req *http.Request, inBuffer *bytes.Buffer) {
 	dimension, format, err := parseParams(req)
 	if err != nil {
-		log.Printf("[ERROR] parse params error %v", err)
+		log.Errorf("parse params error %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("[DEBUG] Process file -> Dimension: %s", dimension)
+	log.Tracef("Process file -> Dimension: %s", dimension)
 	sourceSize := inBuffer.Len()
 
 	var xfilename, contentType string
@@ -175,16 +175,19 @@ func processBuffer(w http.ResponseWriter, req *http.Request, inBuffer *bytes.Buf
 
 	resBuffer, err := convert(inBuffer, format, dimension)
 	if err != nil {
-		log.Printf("[ERROR] Convert error %v", err)
+		log.Errorf("Convert error %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("[DEBUG] File resized length before: %s", bytefmt.ByteSize(uint64(sourceSize)))
-
 	imageLen := resBuffer.Len()
 
-	log.Printf("[DEBUG] File resized length after: %s", bytefmt.ByteSize(uint64(imageLen)))
+	log.WithFields(log.Fields{
+		"before": bytefmt.ByteSize(uint64(sourceSize)),
+		"after":  bytefmt.ByteSize(uint64(imageLen)),
+		"format": format,
+		"coff":   float64(uint((float64(imageLen)/float64(sourceSize))*100)) / 100,
+	}).Info("Convert result")
 
 	w.Header().Set("X-Filename", xfilename)
 	w.Header().Set("Content-Type", contentType)

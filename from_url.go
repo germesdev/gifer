@@ -3,18 +3,18 @@ package main
 import (
 	"bytes"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 )
 
 func resizeFromURLHandler(w http.ResponseWriter, req *http.Request) {
-	log.Println("[DEBUG] Hit resize from URL ...")
+	log.Trace("Hit resize from URL ...")
 
 	inBuffer, err := downloadSource(mux.Vars(req)["source"])
 	if err != nil {
-		log.Printf("[ERROR] Download source error: %s", err)
+		log.Errorf("Download source error: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
