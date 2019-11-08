@@ -129,8 +129,9 @@ func convertExec(src *bytes.Buffer, format string, dimensions string) (*bytes.Bu
 			"-pix_fmt", "yuv420p",
 			"-c:v", "libwebp",
 			"-lossless", "0", // enable lossles. 1 - enable
-			"-compression_level", "4", // Higher values give better quality for a given size. default - 4
-			"-q:v", "25",
+			"-compression_level", "6", // Higher values give better quality for a given size. default - 4
+			"-q:v", "75",
+			"-t", "00:00:05",
 			"-loop", "0",
 			// "-qscale", "75", // For lossy encoding, this controls image quality, 0 to 100
 		}...)
