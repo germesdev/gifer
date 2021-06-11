@@ -192,6 +192,7 @@ func convertToGif(src *bytes.Buffer, dimensions string, inputfile *os.File) (*by
 	paletteArgs := []string{
 		"-i", inputfile.Name(),
 		"-vf", filters + ",palettegen",
+		"-vframes", "1",
 		"-y", palette.Name(),
 	}
 
@@ -208,6 +209,7 @@ func convertToGif(src *bytes.Buffer, dimensions string, inputfile *os.File) (*by
 	convertArgs := []string{
 		"-i", inputfile.Name(),
 		"-i", palette.Name(),
+		"-vframes", "1",
 		"-lavfi", filters + " [x]; [x][1:v] paletteuse",
 		"-y", outfile.Name(),
 	}
