@@ -143,6 +143,7 @@ func convertExec(src *bytes.Buffer, format string, dimensions string) (*bytes.Bu
 			// "-compression_level", "4", // Higher values give better quality for a given size. default - 4
 			// "-q:v", "25",
 			// "-loop", "0",
+			"-vframes", "1",
 			"-f", "gif",
 			// "-qscale", "75", // For lossy encoding, this controls image quality, 0 to 100
 		}...)
