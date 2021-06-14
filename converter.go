@@ -84,8 +84,8 @@ func convertExec(src *bytes.Buffer, format string, dimensions string) (*bytes.Bu
 	}()
 
 	args := []string{
-		"-an", // disable audio
-		"-y",  // overwrite
+		// "-an", // disable audio
+		"-y", // overwrite
 		// "-trans_color", "ffffff", // TODO read from input
 		"-i", inputfile.Name(), // set input
 		"-vf", dimensions,
